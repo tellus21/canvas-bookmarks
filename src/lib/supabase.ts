@@ -17,7 +17,7 @@ export const MOCK_USER = {
 export const MOCK_CANVASES = [
   {
     id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'プロジェクトA資料',
+    title: '技術スタックドキュメント',
     user_id: MOCK_USER.id,
     public: true,
     created_at: new Date().toISOString(),
@@ -25,7 +25,7 @@ export const MOCK_CANVASES = [
   },
   {
     id: 'c3daa77b-5c1a-4a37-9c1a-aaf010101011',
-    title: '技術記事ブックマーク',
+    title: 'Web開発ツール',
     user_id: MOCK_USER.id,
     public: false,
     created_at: new Date().toISOString(),
@@ -33,7 +33,7 @@ export const MOCK_CANVASES = [
   },
   {
     id: 'd3daa77b-5c1a-4a37-9c1a-aaf010101012',
-    title: '参考デザイン集',
+    title: '東京の観光地',
     user_id: MOCK_USER.id,
     public: true,
     created_at: new Date().toISOString(),
@@ -46,8 +46,8 @@ export const MOCK_BOOKMARKS = [
   {
     id: 'e3daa77b-5c1a-4a37-9c1a-aaf010101013',
     canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'プロジェクト計画書',
-    url: 'https://example.com/project-plan',
+    title: 'TypeScript',
+    url: 'https://www.typescriptlang.org/',
     icon: 'file-text',
     position_x: 100,
     position_y: 150,
@@ -57,8 +57,8 @@ export const MOCK_BOOKMARKS = [
   {
     id: 'f3daa77b-5c1a-4a37-9c1a-aaf010101014',
     canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'API仕様書',
-    url: 'https://example.com/api-spec',
+    title: 'Next.js',
+    url: 'https://nextjs.org/',
     icon: 'code',
     position_x: 300,
     position_y: 200,
@@ -68,8 +68,8 @@ export const MOCK_BOOKMARKS = [
   {
     id: 'g3daa77b-5c1a-4a37-9c1a-aaf010101015',
     canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'デザインガイドライン',
-    url: 'https://example.com/design-guide',
+    title: 'shadcn/ui',
+    url: 'https://ui.shadcn.com/',
     icon: 'palette',
     position_x: 500,
     position_y: 150,
@@ -83,7 +83,7 @@ export const MOCK_GROUPS = [
   {
     id: 'h3daa77b-5c1a-4a37-9c1a-aaf010101016',
     canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: '開発ドキュメント',
+    title: 'フロントエンド',
     position_x: 50,
     position_y: 100,
     width: 400,
