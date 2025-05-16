@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bookmark } from "@/types";
 
@@ -31,20 +31,23 @@ export function BookmarkCard({ bookmark, onMove }: BookmarkCardProps) {
   };
 
   // マウス移動イベントハンドラ
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isDragging) return;
-    const newX = e.clientX - dragOffset.x;
-    const newY = e.clientY - dragOffset.y;
-    setPosition({ x: newX, y: newY });
-  };
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging) return;
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      setPosition({ x: newX, y: newY });
+    },
+    [isDragging, dragOffset]
+  );
 
   // マウスアップイベントハンドラ
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
       onMove(bookmark.id, position.x, position.y);
     }
-  };
+  }, [isDragging, onMove, bookmark.id, position.x, position.y]);
 
   // イベントリスナーの設定と解除
   useEffect(() => {
@@ -56,7 +59,7 @@ export function BookmarkCard({ bookmark, onMove }: BookmarkCardProps) {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragOffset]);
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   return (
     <div

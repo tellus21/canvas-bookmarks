@@ -3,15 +3,11 @@ import { Metadata } from "next";
 import { Canvas } from "@/components/canvas/Canvas";
 import { api } from "@/lib/supabase";
 
-interface CanvasDetailPageProps {
-  params: {
-    id: string;
-  };
-}
-
 export async function generateMetadata({
   params,
-}: CanvasDetailPageProps): Promise<Metadata> {
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
   const { id } = await params;
   const canvas = await api.getCanvas(id);
 
@@ -29,7 +25,9 @@ export async function generateMetadata({
 
 export default async function CanvasDetailPage({
   params,
-}: CanvasDetailPageProps) {
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = await params;
   const canvas = await api.getCanvas(id);
 

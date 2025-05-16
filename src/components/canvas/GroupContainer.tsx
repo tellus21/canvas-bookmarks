@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Group } from "@/types";
 
 interface GroupContainerProps {
@@ -40,20 +40,23 @@ export function GroupContainer({
   };
 
   // マウス移動
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
-      setPosition({ x: newX, y: newY });
-    } else if (isResizing) {
-      const newWidth = Math.max(200, e.clientX - position.x);
-      const newHeight = Math.max(100, e.clientY - position.y);
-      setSize({ width: newWidth, height: newHeight });
-    }
-  };
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (isDragging) {
+        const newX = e.clientX - dragOffset.x;
+        const newY = e.clientY - dragOffset.y;
+        setPosition({ x: newX, y: newY });
+      } else if (isResizing) {
+        const newWidth = Math.max(200, e.clientX - position.x);
+        const newHeight = Math.max(100, e.clientY - position.y);
+        setSize({ width: newWidth, height: newHeight });
+      }
+    },
+    [isDragging, isResizing, dragOffset, position.x, position.y]
+  );
 
   // ドラッグ終了
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
       onMove(group.id, position.x, position.y);
@@ -61,7 +64,17 @@ export function GroupContainer({
       setIsResizing(false);
       onResize(group.id, size.width, size.height);
     }
-  };
+  }, [
+    isDragging,
+    isResizing,
+    onMove,
+    onResize,
+    group.id,
+    position.x,
+    position.y,
+    size.width,
+    size.height,
+  ]);
 
   // リサイズ開始
   const handleResizeMouseDown = (e: React.MouseEvent) => {
@@ -79,7 +92,7 @@ export function GroupContainer({
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset]);
+  }, [isDragging, isResizing, dragOffset, handleMouseMove, handleMouseUp]);
 
   return (
     <div
