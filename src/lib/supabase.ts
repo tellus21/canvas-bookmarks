@@ -1,114 +1,255 @@
-// import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 
-// 実際の環境では.envファイルから読み込む
-// const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-// const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-// export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// テスト用のユーザーデータ
-export const MOCK_USER = {
-  id: '550e8400-e29b-41d4-a716-446655440000',
-  email: 'test@example.com',
-  name: 'Test User',
-  created_at: new Date().toISOString()
+// 型定義
+export type Canvas = {
+  id: string;
+  user_id: string;
+  title: string;
+  is_public: boolean;
+  created_at: string;
+  updated_at?: string;
 };
 
-// テスト用のキャンバスデータ
-export const MOCK_CANVASES = [
-  {
-    id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: '技術スタックドキュメント',
-    user_id: MOCK_USER.id,
-    public: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'c3daa77b-5c1a-4a37-9c1a-aaf010101011',
-    title: 'Web開発ツール',
-    user_id: MOCK_USER.id,
-    public: false,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'd3daa77b-5c1a-4a37-9c1a-aaf010101012',
-    title: '東京の観光地',
-    user_id: MOCK_USER.id,
-    public: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
+export type BookmarkGroup = {
+  id: string;
+  canvas_id: string;
+  name: string;
+  position_x?: number;
+  position_y?: number;
+  width?: number;
+  height?: number;
+  created_at?: string;
+  updated_at?: string;
+};
 
-// テスト用のブックマークデータ
-export const MOCK_BOOKMARKS = [
-  {
-    id: 'e3daa77b-5c1a-4a37-9c1a-aaf010101013',
-    canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'TypeScript',
-    url: 'https://www.typescriptlang.org/',
-    icon: 'file-text',
-    position_x: 100,
-    position_y: 150,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'f3daa77b-5c1a-4a37-9c1a-aaf010101014',
-    canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'Next.js',
-    url: 'https://nextjs.org/',
-    icon: 'code',
-    position_x: 300,
-    position_y: 200,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  },
-  {
-    id: 'g3daa77b-5c1a-4a37-9c1a-aaf010101015',
-    canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'shadcn/ui',
-    url: 'https://ui.shadcn.com/',
-    icon: 'palette',
-    position_x: 500,
-    position_y: 150,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }
-];
+export type Bookmark = {
+  id: string;
+  group_id: string;
+  name: string;
+  url: string;
+  icon: string;
+  position_x?: number;
+  position_y?: number;
+  created_at?: string;
+  updated_at?: string;
+};
 
-// テスト用のグループデータ
-export const MOCK_GROUPS = [
-  {
-    id: 'h3daa77b-5c1a-4a37-9c1a-aaf010101016',
-    canvas_id: 'b3daa77b-5c1a-4a37-9c1a-aaf010101010',
-    title: 'フロントエンド',
-    position_x: 50,
-    position_y: 100,
-    width: 400,
-    height: 300,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    bookmarks: [
-      MOCK_BOOKMARKS[0],
-      MOCK_BOOKMARKS[1]
-    ]
-  }
-];
+export type User = {
+  id: string;
+  display_name: string;
+  email: string;
+};
 
-// APIのモック実装
 export const api = {
-  getCanvases: async () => {
-    return MOCK_CANVASES;
+  // 全てのキャンバス取得
+  getCanvases: async (): Promise<Canvas[]> => {
+    const { data, error } = await supabase
+      .from('canvas')
+      .select('id, user_id, title, is_public, created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
   },
-  getCanvas: async (id: string) => {
-    return MOCK_CANVASES.find(canvas => canvas.id === id);
+
+  // キャンバス1件取得
+  getCanvas: async (id: string): Promise<Canvas | null> => {
+    const { data, error } = await supabase
+      .from('canvas')
+      .select('id, user_id, title, is_public, created_at')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
   },
-  getBookmarks: async (canvasId: string) => {
-    return MOCK_BOOKMARKS.filter(bookmark => bookmark.canvas_id === canvasId);
+
+  // グループ一覧取得
+  getGroups: async (canvasId: string): Promise<BookmarkGroup[]> => {
+    const { data, error } = await supabase
+      .from('bookmark_group')
+      .select('id, canvas_id, name, position_x, position_y, width, height, created_at, updated_at')
+      .eq('canvas_id', canvasId);
+    if (error) throw error;
+    return data || [];
   },
-  getGroups: async (canvasId: string) => {
-    return MOCK_GROUPS.filter(group => group.canvas_id === canvasId);
-  }
+
+  // グループ内のブックマーク一覧取得
+  getBookmarks: async (groupId: string): Promise<Bookmark[]> => {
+    const { data, error } = await supabase
+      .from('bookmark')
+      .select('id, group_id, name, url, icon, position_x, position_y, created_at, updated_at')
+      .eq('group_id', groupId);
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ユーザー情報取得
+  getUser: async (id: string): Promise<User | null> => {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // キャンバス追加
+  addCanvas: async (params: {
+    user_id: string;
+    title: string;
+    is_public?: boolean;
+  }) => {
+    const { data, error } = await supabase
+      .from('canvas')
+      .insert([
+        {
+          user_id: params.user_id,
+          title: params.title,
+          is_public: params.is_public ?? false,
+        },
+      ])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // キャンバス編集
+  updateCanvas: async (id: string, params: {
+    title?: string;
+    is_public?: boolean;
+  }) => {
+    const { data, error } = await supabase
+      .from('canvas')
+      .update(params)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // キャンバス削除
+  deleteCanvas: async (id: string) => {
+    const { error } = await supabase
+      .from('canvas')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  // グループ追加
+  addGroup: async (params: {
+    canvas_id: string;
+    name: string;
+    position_x?: number;
+    position_y?: number;
+    width?: number;
+    height?: number;
+  }) => {
+    const { data, error } = await supabase
+      .from('bookmark_group')
+      .insert([
+        {
+          canvas_id: params.canvas_id,
+          name: params.name,
+          position_x: params.position_x ?? 0,
+          position_y: params.position_y ?? 0,
+          width: params.width ?? 300,
+          height: params.height ?? 200,
+        },
+      ])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // グループ編集
+  updateGroup: async (id: string, params: {
+    name?: string;
+    position_x?: number;
+    position_y?: number;
+    width?: number;
+    height?: number;
+  }) => {
+    const { data, error } = await supabase
+      .from('bookmark_group')
+      .update(params)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // グループ削除
+  deleteGroup: async (id: string) => {
+    const { error } = await supabase
+      .from('bookmark_group')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  },
+
+  // ブックマーク追加
+  addBookmark: async (params: {
+    group_id: string;
+    name: string;
+    url: string;
+    icon: string;
+    position_x?: number;
+    position_y?: number;
+  }) => {
+    const { data, error } = await supabase
+      .from('bookmark')
+      .insert([
+        {
+          group_id: params.group_id,
+          name: params.name,
+          url: params.url,
+          icon: params.icon,
+          position_x: params.position_x ?? 0,
+          position_y: params.position_y ?? 0,
+        },
+      ])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // ブックマーク編集
+  updateBookmark: async (id: string, params: {
+    name?: string;
+    url?: string;
+    icon?: string;
+    position_x?: number;
+    position_y?: number;
+  }) => {
+    const { data, error } = await supabase
+      .from('bookmark')
+      .update(params)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // ブックマーク削除
+  deleteBookmark: async (id: string) => {
+    const { error } = await supabase
+      .from('bookmark')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return true;
+  },
 }; 
