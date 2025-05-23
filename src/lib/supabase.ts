@@ -59,9 +59,9 @@ export const api = {
   getCanvas: async (id: string): Promise<Canvas | null> => {
     const { data, error } = await supabase
       .from('canvas')
-      .select('id, user_id, title, is_public, created_at')
+      .select('id, user_id, title, is_public, created_at, updated_at')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -92,7 +92,7 @@ export const api = {
       .from('users')
       .select('*')
       .eq('id', id)
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -113,7 +113,7 @@ export const api = {
         },
       ])
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -128,7 +128,7 @@ export const api = {
       .update(params)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -165,7 +165,7 @@ export const api = {
         },
       ])
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -183,7 +183,7 @@ export const api = {
       .update(params)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -220,7 +220,7 @@ export const api = {
         },
       ])
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },
@@ -238,7 +238,7 @@ export const api = {
       .update(params)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw error;
     return data;
   },

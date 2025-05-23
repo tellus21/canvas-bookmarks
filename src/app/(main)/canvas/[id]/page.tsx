@@ -32,6 +32,7 @@ export default async function CanvasDetailPage({
 }) {
   const { id } = await params;
   const canvasData = await api.getCanvas(id);
+  console.log("canvasData", canvasData); // デバッグ用
 
   if (!canvasData) {
     notFound();
