@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Group } from "@/types";
+import { api } from "@/lib/supabase";
 
 interface GroupContainerProps {
   group: Group;
@@ -60,9 +61,20 @@ export function GroupContainer({
     if (isDragging) {
       setIsDragging(false);
       onMove(group.id, position.x, position.y);
+      // DBに位置を保存
+      api
+        .updateGroup(group.id, {
+          position_x: position.x,
+          position_y: position.y,
+        })
+        .catch(console.error);
     } else if (isResizing) {
       setIsResizing(false);
       onResize(group.id, size.width, size.height);
+      // DBにサイズを保存
+      api
+        .updateGroup(group.id, { width: size.width, height: size.height })
+        .catch(console.error);
     }
   }, [
     isDragging,

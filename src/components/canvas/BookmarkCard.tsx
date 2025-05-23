@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bookmark } from "@/types";
+import { api } from "@/lib/supabase";
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
@@ -46,6 +47,13 @@ export function BookmarkCard({ bookmark, onMove }: BookmarkCardProps) {
     if (isDragging) {
       setIsDragging(false);
       onMove(bookmark.id, position.x, position.y);
+      // DBに位置を保存
+      api
+        .updateBookmark(bookmark.id, {
+          position_x: position.x,
+          position_y: position.y,
+        })
+        .catch(console.error);
     }
   }, [isDragging, onMove, bookmark.id, position.x, position.y]);
 
