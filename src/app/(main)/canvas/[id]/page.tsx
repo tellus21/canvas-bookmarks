@@ -50,6 +50,7 @@ export default async function CanvasDetailPage({
 
   // グループ一覧を取得
   const groupData = await api.getGroups(id);
+  console.log("groupData", groupData); // デバッグ用
   // Group型にマッピング
   const groups: Group[] = groupData.map((g) => ({
     id: g.id,
@@ -63,6 +64,7 @@ export default async function CanvasDetailPage({
     updated_at: g.updated_at ?? "",
     bookmarks: [],
   }));
+  console.log("groups", groups); // デバッグ用
 
   // 各グループごとにブックマークを取得し、Bookmark型にマッピング
   const bookmarks: Bookmark[] = (

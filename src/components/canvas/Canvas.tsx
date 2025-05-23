@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { BookmarkCard } from "./BookmarkCard";
 import { GroupContainer } from "./GroupContainer";
 import { Canvas as CanvasType, Bookmark, Group } from "@/types";
+import { useRouter } from "next/navigation";
 
 interface CanvasProps {
   canvas: CanvasType;
@@ -24,6 +25,7 @@ export function Canvas({
   const [groups, setGroups] = useState(initialGroups);
   const [isEditing, setIsEditing] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
@@ -88,11 +90,19 @@ export function Canvas({
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/canvas/${canvas.id}/bookmark/new`)}
+            >
               <Plus className="h-4 w-4 mr-1" />
               新規ブックマーク
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/canvas/${canvas.id}/group/new`)}
+            >
               <Plus className="h-4 w-4 mr-1" />
               新規グループ
             </Button>
