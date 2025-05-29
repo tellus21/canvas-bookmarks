@@ -9,7 +9,7 @@ export type Canvas = {
   id: string;
   user_id: string;
   title: string;
-  is_public: boolean;
+  public: boolean;
   created_at: string;
   updated_at?: string;
 };
@@ -52,7 +52,11 @@ export const api = {
       .select('id, user_id, title, is_public, created_at')
       .order('created_at', { ascending: false });
     if (error) throw error;
-    return data || [];
+    return (data || []).map(item => ({
+      ...item,
+      public: item.is_public,
+      is_public: undefined
+    }));
   },
 
   // キャンバス1件取得
@@ -63,7 +67,11 @@ export const api = {
       .eq('id', id)
       .maybeSingle();
     if (error) throw error;
-    return data;
+    if (!data) return null;
+    return {
+      ...data,
+      public: data.is_public,
+    };
   },
 
   // グループ一覧取得
@@ -101,7 +109,7 @@ export const api = {
   addCanvas: async (params: {
     user_id: string;
     title: string;
-    is_public?: boolean;
+    public?: boolean;
   }) => {
     const { data, error } = await supabase
       .from('canvas')
@@ -109,38 +117,105 @@ export const api = {
         {
           user_id: params.user_id,
           title: params.title,
-          is_public: params.is_public ?? false,
+          is_public: params.public ?? false,
         },
       ])
       .select()
       .maybeSingle();
     if (error) throw error;
-    return data;
+    if (!data) return null;
+    return {
+      ...data,
+      public: data.is_public,
+    };
   },
 
   // キャンバス編集
   updateCanvas: async (id: string, params: {
     title?: string;
-    is_public?: boolean;
+    public?: boolean;
   }) => {
+    const updateData: { title?: string; is_public?: boolean } = {};
+    if (params.title !== undefined) updateData.title = params.title;
+    if (params.public !== undefined) updateData.is_public = params.public;
+
     const { data, error } = await supabase
       .from('canvas')
-      .update(params)
+      .update(updateData)
       .eq('id', id)
       .select()
       .maybeSingle();
     if (error) throw error;
-    return data;
+    if (!data) return null;
+    return {
+      ...data,
+      public: data.is_public,
+    };
   },
 
-  // キャンバス削除
+  // キャンバス削除（カスケード削除）
   deleteCanvas: async (id: string) => {
-    const { error } = await supabase
-      .from('canvas')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
-    return true;
+    console.log("Supabase deleteCanvas 開始:", id); // デバッグ用
+    
+    try {
+      // 1. キャンバス内のすべてのグループを取得
+      const groups = await api.getGroups(id);
+      console.log("削除対象グループ:", groups.length); // デバッグ用
+      
+      // 2. 各グループ内のブックマークを削除
+      for (const group of groups) {
+        const bookmarks = await api.getBookmarks(group.id);
+        console.log(`グループ ${group.id} のブックマーク削除:`, bookmarks.length); // デバッグ用
+        
+        for (const bookmark of bookmarks) {
+          const { error: bookmarkError } = await supabase
+            .from('bookmark')
+            .delete()
+            .eq('id', bookmark.id);
+          
+          if (bookmarkError) {
+            console.error("ブックマーク削除エラー:", bookmarkError);
+            throw bookmarkError;
+          }
+        }
+      }
+      
+      // 3. すべてのグループを削除
+      for (const group of groups) {
+        const { error: groupError } = await supabase
+          .from('bookmark_group')
+          .delete()
+          .eq('id', group.id);
+        
+        if (groupError) {
+          console.error("グループ削除エラー:", groupError);
+          throw groupError;
+        }
+      }
+      
+      // 4. 最後にキャンバスを削除
+      const { error } = await supabase
+        .from('canvas')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error("Supabase deleteCanvas エラー:", error); // デバッグ用
+        console.error("エラー詳細:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        }); // デバッグ用
+        throw error;
+      }
+      
+      console.log("Supabase deleteCanvas 成功:", id); // デバッグ用
+      return true;
+    } catch (error) {
+      console.error("カスケード削除エラー:", error);
+      throw error;
+    }
   },
 
   // グループ追加

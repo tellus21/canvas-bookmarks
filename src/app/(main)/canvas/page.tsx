@@ -17,7 +17,7 @@ export default async function CanvasListPage() {
     id: c.id,
     title: c.title,
     user_id: c.user_id,
-    public: c.is_public,
+    public: c.public,
     created_at: c.created_at,
     updated_at: c.updated_at ?? c.created_at,
   }));

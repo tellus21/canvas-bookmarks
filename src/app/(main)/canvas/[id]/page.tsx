@@ -43,7 +43,7 @@ export default async function CanvasDetailPage({
     id: canvasData.id,
     title: canvasData.title,
     user_id: canvasData.user_id,
-    public: canvasData.is_public, // DBはis_public、型はpublic
+    public: canvasData.public, // 修正: is_publicからpublicに変更
     created_at: canvasData.created_at,
     updated_at: canvasData.updated_at ?? canvasData.created_at,
   };
