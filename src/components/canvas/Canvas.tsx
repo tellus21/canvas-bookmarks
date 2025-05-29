@@ -110,6 +110,21 @@ export function Canvas({
     );
   };
 
+  const handleBookmarkUpdate = (
+    id: string,
+    updatedBookmark: Partial<Bookmark>
+  ) => {
+    setBookmarks((prev) =>
+      prev.map((bookmark) =>
+        bookmark.id === id ? { ...bookmark, ...updatedBookmark } : bookmark
+      )
+    );
+  };
+
+  const handleBookmarkDelete = (id: string) => {
+    setBookmarks((prev) => prev.filter((bookmark) => bookmark.id !== id));
+  };
+
   const handleGroupMove = (id: string, x: number, y: number) => {
     setGroups((prev) =>
       prev.map((group) =>
@@ -257,6 +272,8 @@ export function Canvas({
             key={bookmark.id}
             bookmark={bookmark}
             onMove={handleBookmarkMove}
+            onUpdate={handleBookmarkUpdate}
+            onDelete={handleBookmarkDelete}
           />
         ))}
       </div>

@@ -308,23 +308,49 @@ export const api = {
     position_x?: number;
     position_y?: number;
   }) => {
+    console.log("Supabase updateBookmark 開始:", id, params); // デバッグ用
     const { data, error } = await supabase
       .from('bookmark')
       .update(params)
       .eq('id', id)
       .select()
       .maybeSingle();
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Supabase updateBookmark エラー:", error); // デバッグ用
+      console.error("エラー詳細:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      }); // デバッグ用
+      throw error;
+    }
+    
+    console.log("Supabase updateBookmark 成功:", data); // デバッグ用
     return data;
   },
 
   // ブックマーク削除
   deleteBookmark: async (id: string) => {
+    console.log("Supabase deleteBookmark 開始:", id); // デバッグ用
     const { error } = await supabase
       .from('bookmark')
       .delete()
       .eq('id', id);
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Supabase deleteBookmark エラー:", error); // デバッグ用
+      console.error("エラー詳細:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      }); // デバッグ用
+      throw error;
+    }
+    
+    console.log("Supabase deleteBookmark 成功:", id); // デバッグ用
     return true;
   },
 }; 
