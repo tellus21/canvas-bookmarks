@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CanvasBookmarks
 
-## Getting Started
+ブックマークを視覚的に整理できるツールです。
 
-First, run the development server:
+## 開発環境のセットアップ
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## テスト
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+このプロジェクトでは、Playwright（E2Eテスト）とVitest（ユニットテスト）を使用しています。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### ユニットテスト（Vitest + React Testing Library）
 
-## Learn More
+```bash
+# テストを実行（ウォッチモード）
+npm run test
 
-To learn more about Next.js, take a look at the following resources:
+# テストを一度だけ実行
+npm run test:run
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# テストUIを開く
+npm run test:ui
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# カバレッジレポートを生成
+npm run test:coverage
+```
 
-## Deploy on Vercel
+### E2Eテスト（Playwright）
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# E2Eテストを実行
+npm run test:e2e
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# E2EテストをUIモードで実行
+npm run test:e2e:ui
+
+# E2Eテストをデバッグモードで実行
+npm run test:e2e:debug
+```
+
+## テストファイルの構成
+
+```
+tests/
+├── setup.ts              # Vitestのセットアップファイル
+├── unit/                 # ユニットテスト
+│   ├── Header.test.tsx
+│   └── HomePage.test.tsx
+├── integration/          # 統合テスト
+└── e2e/                  # E2Eテスト
+    └── homepage.spec.ts
+```
+
+## テストの書き方
+
+### ユニットテスト
+
+```typescript
+import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { YourComponent } from '@/components/YourComponent'
+
+describe('YourComponent', () => {
+  it('正しくレンダリングされる', () => {
+    render(<YourComponent />)
+    expect(screen.getByText('期待するテキスト')).toBeInTheDocument()
+  })
+})
+```
+
+### E2Eテスト
+
+```typescript
+import { test, expect } from '@playwright/test'
+
+test('ページが正しく動作する', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText('期待するテキスト')).toBeVisible()
+})
+```
+
+## 技術スタック
+
+- **フレームワーク**: Next.js 15
+- **言語**: TypeScript
+- **スタイリング**: Tailwind CSS
+- **UI コンポーネント**: Radix UI
+- **データベース**: Supabase
+- **テスト**: 
+  - ユニットテスト: Vitest + React Testing Library
+  - E2Eテスト: Playwright
+
+## ライセンス
+
+MIT
