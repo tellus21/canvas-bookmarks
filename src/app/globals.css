@@ -121,34 +121,71 @@
   }
 }
 
-/* キャンバス関連のカスタムCSS */
-.canvas {
-  width: 100%;
-  height: calc(100vh - 6rem);
-  position: relative;
-  overflow: auto;
-  background-color: #f9fafb;
-  background-image: 
-    linear-gradient(rgba(156, 163, 175, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(156, 163, 175, 0.1) 1px, transparent 1px);
-  background-size: 20px 20px;
+/* 再利用可能なユーティリティクラス */
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
 }
 
-.bookmark-card {
-  position: absolute;
-  min-width: 200px;
-  cursor: move;
-  z-index: 10;
+/* アプリケーション固有のコンポーネントスタイル */
+@layer components {
+  /* キャンバス関連 */
+  .canvas {
+    @apply w-full relative overflow-auto;
+    height: calc(100vh - 6rem);
+    background-color: #f9fafb;
+    background-image: 
+      linear-gradient(rgba(156, 163, 175, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(156, 163, 175, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .canvas-public {
+    height: calc(100vh - 3.5rem);
+  }
+
+  .bookmark-card {
+    @apply absolute z-10;
+    min-width: 150px;
+  }
+
+  .group-container {
+    @apply absolute z-[5] cursor-move rounded-lg border-dashed border-gray-400 bg-gray-300/30 p-2;
+    min-width: 300px;
+    min-height: 200px;
+  }
 }
 
-.group-container {
-  position: absolute;
-  min-width: 300px;
-  min-height: 200px;
-  cursor: move;
-  z-index: 5;
-  background-color: rgba(209, 213, 219, 0.3);
-  border: 1px dashed #9ca3af;
-  border-radius: 8px;
-  padding: 8px;
+/* アニメーション - 複数コンポーネントで使用される可能性 */
+@layer utilities {
+  @keyframes gentle-float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-1px);
+    }
+  }
+
+  .animate-gentle-float {
+    animation: gentle-float 3s ease-in-out infinite;
+  }
 }

@@ -3,7 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Search, MoreVertical, Edit, Trash2 } from "lucide-react";
+import {
+  PlusCircle,
+  Search,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Globe,
+  Rocket,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -57,6 +65,7 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
   const [editingCanvas, setEditingCanvas] = useState<Canvas | null>(null);
   const [deletingCanvas, setDeletingCanvas] = useState<Canvas | null>(null);
   const [loading, setLoading] = useState(false);
+  const [sampleLoading, setSampleLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
@@ -127,19 +136,22 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
     }
   };
 
+  // 編集ダイアログを開く
   const handleEdit = (canvas: Canvas) => {
     setEditingCanvas(canvas);
     setEditTitle(canvas.title);
+    setError("");
     setEditOpen(true);
   };
 
   const handleEditSave = async () => {
-    if (!editingCanvas || !editTitle.trim()) {
+    if (!editingCanvas) return;
+    setError("");
+    if (!editTitle.trim()) {
       setError("タイトルを入力してください");
       return;
     }
     setLoading(true);
-    setError("");
     try {
       const updatedCanvas = await api.updateCanvas(editingCanvas.id, {
         title: editTitle.trim(),
@@ -204,6 +216,36 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
     }
   };
 
+  // サンプルキャンバス作成
+  const handleCreateSample = async () => {
+    setSampleLoading(true);
+    setError("");
+    try {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!user || !user.id) {
+        setError("ユーザー情報が取得できませんでした");
+        return;
+      }
+
+      const canvas = await api.createSampleWebDevCanvas(user.id);
+      if (canvas) {
+        setCanvases((prev) => [canvas, ...prev]);
+        // 作成されたキャンバスに遷移
+        router.push(`/canvas/${canvas.id}`);
+      }
+    } catch (e: unknown) {
+      console.error("サンプルキャンバス作成エラー:", e);
+      if (e instanceof Error) {
+        setError(`サンプルキャンバスの作成に失敗しました: ${e.message}`);
+      } else {
+        setError("サンプルキャンバスの作成に失敗しました");
+      }
+    } finally {
+      setSampleLoading(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -217,46 +259,158 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setTitle("新しいキャンバス")}>
-              {" "}
-              {/* デフォルト値 */}
-              <PlusCircle className="mr-2 h-4 w-4" />
-              新規キャンバス
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新規キャンバス作成</DialogTitle>
-            </DialogHeader>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="キャンバスタイトル"
-              disabled={loading}
-              autoFocus
-            />
-            {error && <div className="text-red-500 text-sm">{error}</div>}
-            <DialogFooter>
-              <Button onClick={handleCreate} disabled={loading}>
-                {loading ? "作成中..." : "作成"}
+        <div className="flex gap-2">
+          {/* サンプルキャンバス作成ボタン */}
+          <Button
+            variant="outline"
+            onClick={handleCreateSample}
+            disabled={sampleLoading}
+            className="hidden sm:flex"
+          >
+            <Rocket className="mr-2 h-4 w-4" />
+            {sampleLoading ? "作成中..." : "サンプルを作成"}
+          </Button>
+
+          {/* 通常のキャンバス作成ボタン */}
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setTitle("新しいキャンバス")}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                新規キャンバス
               </Button>
-              <DialogClose asChild>
-                <Button variant="outline" type="button" disabled={loading}>
-                  キャンセル
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>新規キャンバス作成</DialogTitle>
+              </DialogHeader>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="キャンバスタイトル"
+                disabled={loading}
+                autoFocus
+              />
+              {error && <div className="text-red-500 text-sm">{error}</div>}
+              <DialogFooter>
+                <Button onClick={handleCreate} disabled={loading}>
+                  {loading ? "作成中..." : "作成"}
                 </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                <DialogClose asChild>
+                  <Button variant="outline" type="button" disabled={loading}>
+                    キャンセル
+                  </Button>
+                </DialogClose>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* 空状態でのサンプル案内 */}
+      {filteredCanvases.length === 0 && searchTerm === "" && (
+        <div className="text-center py-12">
+          <div className="mx-auto max-w-md">
+            <Rocket className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              キャンバスがありません
+            </h3>
+            <p className="text-gray-500 mb-6">
+              初めての方はサンプルキャンバスを作成して、
+              <br />
+              アプリの使い方を確認してみましょう！
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleCreateSample} disabled={sampleLoading}>
+                <Rocket className="mr-2 h-4 w-4" />
+                {sampleLoading ? "作成中..." : "Webアプリ開発サンプルを作成"}
+              </Button>
+              <Button variant="outline" onClick={() => setOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                空のキャンバスを作成
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* エラー表示 */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* キャンバス一覧 */}
+      {filteredCanvases.length > 0 && (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredCanvases.map((canvas) => (
+            <Card key={canvas.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-lg font-semibold truncate">
+                  {canvas.title}
+                </CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEdit(canvas)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      編集
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(canvas)}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      削除
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">
+                  作成日:{" "}
+                  {new Date(canvas.created_at).toLocaleDateString("ja-JP")}
+                </p>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <div className="flex items-center gap-2">
+                  {canvas.public && (
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <Globe className="h-3 w-3" />
+                      公開
+                    </Badge>
+                  )}
+                </div>
+                <Button asChild>
+                  <Link href={`/canvas/${canvas.id}`}>開く</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* 検索結果なし */}
+      {filteredCanvases.length === 0 && searchTerm !== "" && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">
+            「{searchTerm}」に一致するキャンバスが見つかりませんでした。
+          </p>
+        </div>
+      )}
 
       {/* 編集ダイアログ */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>キャンバスを編集</DialogTitle>
+            <DialogTitle>キャンバス編集</DialogTitle>
           </DialogHeader>
           <Input
             value={editTitle}
@@ -287,14 +441,9 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
             <AlertDialogDescription>
               「{deletingCanvas?.title}
               」を削除します。この操作は取り消せません。
-              キャンバス内のすべてのブックマークとグループも削除されます。
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {error && (
-            <div className="text-red-500 text-sm bg-red-50 p-3 rounded border">
-              {error}
-            </div>
-          )}
+          {error && <div className="text-red-500 text-sm">{error}</div>}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={loading}>キャンセル</AlertDialogCancel>
             <AlertDialogAction
@@ -307,68 +456,6 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {filteredCanvases.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">
-            キャンバスが見つかりませんでした
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredCanvases.map((canvas) => (
-            <Card
-              key={canvas.id}
-              className="h-full hover:shadow-md transition-shadow"
-            >
-              <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                  <Link href={`/canvas/${canvas.id}`} className="flex-1">
-                    <span>{canvas.title}</span>
-                  </Link>
-                  <div className="flex items-center gap-2">
-                    {canvas.public && <Badge variant="outline">公開</Badge>}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(canvas)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          編集
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(canvas)}
-                          className="text-destructive"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          削除
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <Link href={`/canvas/${canvas.id}`}>
-                <CardContent>
-                  <div className="h-32 bg-muted rounded flex items-center justify-center text-muted-foreground">
-                    プレビュー
-                  </div>
-                </CardContent>
-                <CardFooter className="text-sm text-muted-foreground">
-                  最終更新: {new Date(canvas.updated_at).toLocaleDateString()}
-                </CardFooter>
-              </Link>
-            </Card>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

@@ -22,7 +22,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { BookmarkCard } from "./BookmarkCard";
 import { GroupContainer } from "./GroupContainer";
+import { ShareDialog } from "./ShareDialog";
+import { BookmarkDialog } from "./BookmarkDialog";
+import { GroupDialog } from "./GroupDialog";
 import { Canvas as CanvasType, Bookmark, Group } from "@/types";
+import { Bookmark as SupabaseBookmark, BookmarkGroup } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/supabase";
 
@@ -30,25 +34,36 @@ interface CanvasProps {
   canvas: CanvasType;
   bookmarks: Bookmark[];
   groups: Group[];
+  isPublic?: boolean;
 }
 
 export function Canvas({
   canvas,
   bookmarks: initialBookmarks,
   groups: initialGroups,
+  isPublic = false,
 }: CanvasProps) {
+  const [currentCanvas, setCurrentCanvas] = useState(canvas);
   const [title, setTitle] = useState(canvas.title);
   const [bookmarks, setBookmarks] = useState(initialBookmarks);
   const [groups, setGroups] = useState(initialGroups);
   const [isEditing, setIsEditing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false);
+  const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [noGroupWarning, setNoGroupWarning] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
+  };
+
+  const handleCanvasUpdate = (updatedCanvas: CanvasType) => {
+    setCurrentCanvas(updatedCanvas);
   };
 
   const handleTitleSave = async () => {
@@ -125,6 +140,40 @@ export function Canvas({
     setBookmarks((prev) => prev.filter((bookmark) => bookmark.id !== id));
   };
 
+  const handleBookmarkSuccess = (bookmark: SupabaseBookmark) => {
+    // 新規作成の場合は追加、編集の場合は更新
+    setBookmarks((prev) => {
+      const existingIndex = prev.findIndex((b) => b.id === bookmark.id);
+      if (existingIndex >= 0) {
+        // 更新
+        return prev.map((b) =>
+          b.id === bookmark.id
+            ? {
+                ...b,
+                title: bookmark.name,
+                url: bookmark.url,
+                icon: bookmark.icon,
+              }
+            : b
+        );
+      } else {
+        // 新規追加 - supabaseの型をtypesの型に変換
+        const newBookmark: Bookmark = {
+          id: bookmark.id,
+          canvas_id: canvas.id,
+          title: bookmark.name,
+          url: bookmark.url,
+          icon: bookmark.icon,
+          position_x: bookmark.position_x || 0,
+          position_y: bookmark.position_y || 0,
+          created_at: bookmark.created_at || new Date().toISOString(),
+          updated_at: bookmark.updated_at || new Date().toISOString(),
+        };
+        return [...prev, newBookmark];
+      }
+    });
+  };
+
   const handleGroupMove = (id: string, x: number, y: number) => {
     setGroups((prev) =>
       prev.map((group) =>
@@ -141,121 +190,201 @@ export function Canvas({
     );
   };
 
+  const handleGroupSuccess = (group: BookmarkGroup) => {
+    // 新規作成の場合は追加、編集の場合は更新
+    setGroups((prev) => {
+      const existingIndex = prev.findIndex((g) => g.id === group.id);
+      if (existingIndex >= 0) {
+        // 更新
+        return prev.map((g) =>
+          g.id === group.id
+            ? {
+                ...g,
+                title: group.name,
+                position_x: group.position_x || 0,
+                position_y: group.position_y || 0,
+                width: group.width || 300,
+                height: group.height || 200,
+              }
+            : g
+        );
+      } else {
+        // 新規追加 - supabaseの型をtypesの型に変換
+        const newGroup: Group = {
+          id: group.id,
+          canvas_id: group.canvas_id,
+          title: group.name,
+          position_x: group.position_x || 0,
+          position_y: group.position_y || 0,
+          width: group.width || 300,
+          height: group.height || 200,
+          created_at: group.created_at || new Date().toISOString(),
+          updated_at: group.updated_at || new Date().toISOString(),
+        };
+        return [...prev, newGroup];
+      }
+    });
+  };
+
+  const handleBookmarkCreate = () => {
+    // グループが存在するかチェック
+    if (groups.length === 0) {
+      setNoGroupWarning(true);
+      // 3秒後に警告を非表示にする
+      setTimeout(() => setNoGroupWarning(false), 3000);
+      return;
+    }
+    setBookmarkDialogOpen(true);
+  };
+
   return (
     <div className="h-full">
-      <div className="container py-4 border-b sticky top-16 bg-background z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isEditing ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  value={title}
-                  onChange={handleTitleChange}
-                  className="w-96"
-                  autoFocus
-                  disabled={loading}
-                />
-                <Button size="sm" onClick={handleTitleSave} disabled={loading}>
-                  <Save className="h-4 w-4 mr-1" />
-                  {loading ? "保存中..." : "保存"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setTitle(canvas.title);
-                    setError("");
-                  }}
-                  disabled={loading}
+      {!isPublic && (
+        <div className="container py-4 border-b sticky top-16 bg-background z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={title}
+                    onChange={handleTitleChange}
+                    className="w-96"
+                    autoFocus
+                    disabled={loading}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleTitleSave}
+                    disabled={loading}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {loading ? "保存中..." : "保存"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setTitle(canvas.title);
+                      setError("");
+                    }}
+                    disabled={loading}
+                  >
+                    キャンセル
+                  </Button>
+                </div>
+              ) : (
+                <h1
+                  className="text-2xl font-bold cursor-pointer hover:bg-secondary hover:bg-opacity-50 px-2 py-1 rounded"
+                  onClick={() => setIsEditing(true)}
                 >
-                  キャンセル
-                </Button>
-              </div>
-            ) : (
-              <h1
-                className="text-2xl font-bold cursor-pointer hover:bg-secondary hover:bg-opacity-50 px-2 py-1 rounded"
-                onClick={() => setIsEditing(true)}
+                  {title}
+                </h1>
+              )}
+              {error && (
+                <div className="text-red-500 text-sm ml-2">{error}</div>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBookmarkCreate}
               >
-                {title}
-              </h1>
-            )}
-            {error && <div className="text-red-500 text-sm ml-2">{error}</div>}
+                <Plus className="h-4 w-4 mr-1" />
+                新規ブックマーク
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setGroupDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                新規グループ
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareOpen(true)}
+              >
+                <Share className="h-4 w-4 mr-1" />
+                共有
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Settings className="h-4 w-4 mr-1" />
+                    設定
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                    タイトルを編集
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    キャンバスを削除
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/canvas/${canvas.id}/bookmark/new`)}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              新規ブックマーク
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push(`/canvas/${canvas.id}/group/new`)}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              新規グループ
-            </Button>
-            <Button variant="outline" size="sm">
-              <Share className="h-4 w-4 mr-1" />
-              共有
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Settings className="h-4 w-4 mr-1" />
-                  設定
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsEditing(true)}>
-                  タイトルを編集
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  キャンバスを削除
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </div>
 
-      {/* 削除確認ダイアログ */}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>キャンバスを削除しますか？</AlertDialogTitle>
-            <AlertDialogDescription>
-              「{canvas.title}」を削除します。この操作は取り消せません。
-              キャンバス内のすべてのブックマークとグループも削除されます。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          {error && (
-            <div className="text-red-500 text-sm bg-red-50 p-3 rounded border">
-              {error}
+          {/* グループ未作成時の警告メッセージ */}
+          {noGroupWarning && (
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <div className="text-amber-800 text-sm">
+                <strong>
+                  ブックマークを作成するには、まずグループを作成してください。
+                </strong>
+                <div className="mt-1">
+                  上記の「新規グループ」ボタンをクリックしてグループを作成してからブックマークを追加できます。
+                </div>
+              </div>
             </div>
           )}
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>キャンセル</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={loading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {loading ? "削除中..." : "削除"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        </div>
+      )}
 
-      <div className="canvas" ref={canvasRef}>
+      {/* 削除確認ダイアログ */}
+      {!isPublic && (
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>キャンバスを削除しますか？</AlertDialogTitle>
+              <AlertDialogDescription>
+                「{canvas.title}」を削除します。この操作は取り消せません。
+                キャンバス内のすべてのブックマークとグループも削除されます。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {error && (
+              <div className="text-red-500 text-sm bg-red-50 p-3 rounded border">
+                {error}
+              </div>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={loading}>
+                キャンセル
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                disabled={loading}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {loading ? "削除中..." : "削除"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      <div
+        className={`canvas ${isPublic ? "canvas-public" : ""}`}
+        ref={canvasRef}
+      >
         {/* グループを描画 */}
         {groups.map((group) => (
           <GroupContainer
@@ -274,9 +403,40 @@ export function Canvas({
             onMove={handleBookmarkMove}
             onUpdate={handleBookmarkUpdate}
             onDelete={handleBookmarkDelete}
+            isPublic={isPublic}
           />
         ))}
       </div>
+
+      {/* 共有ダイアログ */}
+      {!isPublic && (
+        <ShareDialog
+          canvas={currentCanvas}
+          isOpen={shareOpen}
+          onClose={() => setShareOpen(false)}
+          onUpdate={handleCanvasUpdate}
+        />
+      )}
+
+      {/* ブックマーク作成・編集ダイアログ */}
+      {!isPublic && (
+        <BookmarkDialog
+          isOpen={bookmarkDialogOpen}
+          onClose={() => setBookmarkDialogOpen(false)}
+          onSuccess={handleBookmarkSuccess}
+          canvasId={canvas.id}
+        />
+      )}
+
+      {/* グループ作成・編集ダイアログ */}
+      {!isPublic && (
+        <GroupDialog
+          isOpen={groupDialogOpen}
+          onClose={() => setGroupDialogOpen(false)}
+          onSuccess={handleGroupSuccess}
+          canvasId={canvas.id}
+        />
+      )}
     </div>
   );
 }
