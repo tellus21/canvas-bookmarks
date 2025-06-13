@@ -270,14 +270,45 @@ export const api = {
     return data;
   },
 
-  // グループ削除
+  // グループ削除（カスケード削除）
   deleteGroup: async (id: string) => {
-    const { error } = await supabase
-      .from('bookmark_group')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
-    return true;
+    try {
+      console.log("Supabase deleteGroup 開始:", id); // デバッグ用
+      
+      // 1. グループ内のすべてのブックマークを取得
+      const bookmarks = await api.getBookmarks(id);
+      console.log("削除対象ブックマーク:", bookmarks.length); // デバッグ用
+      
+      // 2. 各ブックマークを削除
+      for (const bookmark of bookmarks) {
+        const { error: bookmarkError } = await supabase
+          .from('bookmark')
+          .delete()
+          .eq('id', bookmark.id);
+        
+        if (bookmarkError) {
+          console.error("ブックマーク削除エラー:", bookmarkError);
+          throw bookmarkError;
+        }
+      }
+      
+      // 3. グループを削除
+      const { error } = await supabase
+        .from('bookmark_group')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error("Supabase deleteGroup エラー:", error);
+        throw error;
+      }
+      
+      console.log("Supabase deleteGroup 成功:", id); // デバッグ用
+      return true;
+    } catch (error) {
+      console.error("グループ削除エラー:", error);
+      throw error;
+    }
   },
 
   // ブックマーク追加

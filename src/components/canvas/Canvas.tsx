@@ -226,6 +226,40 @@ export function Canvas({
     });
   };
 
+  const handleGroupDelete = async (id: string) => {
+    try {
+      setLoading(true);
+      setError("");
+
+      // 削除するグループに属するブックマークのIDを取得
+      const groupBookmarks = await api.getBookmarks(id);
+      const bookmarkIds = groupBookmarks.map((bookmark) => bookmark.id);
+
+      // APIを呼び出してグループを削除（ブックマークも一緒に削除される）
+      await api.deleteGroup(id);
+
+      // UIからグループを削除
+      setGroups((prev) => prev.filter((group) => group.id !== id));
+
+      // そのグループに属していたブックマークもUIから削除
+      setBookmarks((prev) =>
+        prev.filter((bookmark) => {
+          // supabaseのbookmark型のIDとtypes/index.tsのBookmark型のIDを比較
+          return !bookmarkIds.includes(bookmark.id);
+        })
+      );
+    } catch (e: unknown) {
+      console.error("グループ削除エラー:", e);
+      if (e instanceof Error) {
+        setError(`グループの削除に失敗しました: ${e.message}`);
+      } else {
+        setError("グループの削除に失敗しました");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBookmarkCreate = () => {
     // グループが存在するかチェック
     if (groups.length === 0) {
@@ -392,6 +426,8 @@ export function Canvas({
             group={group}
             onMove={handleGroupMove}
             onResize={handleGroupResize}
+            onDelete={handleGroupDelete}
+            isPublic={isPublic}
           />
         ))}
 
