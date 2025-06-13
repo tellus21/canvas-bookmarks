@@ -477,20 +477,58 @@ export const api = {
     }
   },
 
+  // ユニークなキャンバス名を生成
+  generateUniqueCanvasTitle: async (userId: string, baseTitle: string, excludeCanvasId?: string): Promise<string> => {
+    try {
+      // ユーザーの既存キャンバスタイトル一覧を取得
+      const existingCanvases = await api.getCanvases(userId);
+      
+      // 編集中のキャンバスは除外
+      const filteredCanvases = excludeCanvasId 
+        ? existingCanvases.filter(canvas => canvas.id !== excludeCanvasId)
+        : existingCanvases;
+      
+      const existingTitles = filteredCanvases.map(canvas => canvas.title);
+      
+      // ベースタイトルが重複していない場合はそのまま返す
+      if (!existingTitles.includes(baseTitle)) {
+        return baseTitle;
+      }
+      
+      // 重複している場合は連番を振る
+      let counter = 2;
+      let newTitle = `${baseTitle} (${counter})`;
+      
+      while (existingTitles.includes(newTitle)) {
+        counter++;
+        newTitle = `${baseTitle} (${counter})`;
+      }
+      
+      return newTitle;
+    } catch (error) {
+      console.error("ユニークタイトル生成エラー:", error);
+      // エラーが発生した場合はタイムスタンプを追加
+      return `${baseTitle} (${Date.now()})`;
+    }
+  },
+
   // サンプルキャンバス作成（Webアプリ開発用）
   createSampleWebDevCanvas: async (userId: string) => {
     try {
-      // 1. キャンバス作成
+      // 1. ユニークなタイトルを生成
+      const uniqueTitle = await api.generateUniqueCanvasTitle(userId, "Webアプリ開発ツール 🚀");
+      
+      // 2. キャンバス作成
       const canvas = await api.addCanvas({
         user_id: userId,
-        title: "Webアプリ開発ツール 🚀",
+        title: uniqueTitle,
       });
 
       if (!canvas || !canvas.id) {
         throw new Error("キャンバスの作成に失敗しました");
       }
 
-      // 2. グループ作成（フロントエンドとバックエンドのみ、サイズを拡大）
+      // 3. グループ作成（フロントエンドとバックエンドのみ、サイズを拡大）
       const groups = [
         {
           name: "フロントエンド",
@@ -519,7 +557,7 @@ export const api = {
         }
       }
 
-      // 3. ブックマーク作成（2つのグループに配置）
+      // 4. ブックマーク作成（2つのグループに配置）
       const bookmarksData = [
         // フロントエンド (グループ座標: 50, 50)
         {

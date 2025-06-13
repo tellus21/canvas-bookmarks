@@ -89,9 +89,16 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
         setLoading(false);
         return;
       }
+
+      // ユニークなタイトルを生成
+      const uniqueTitle = await api.generateUniqueCanvasTitle(
+        user.id,
+        title.trim()
+      );
+
       const canvas = await api.addCanvas({
         user_id: user.id,
-        title: title.trim(),
+        title: uniqueTitle,
       });
       if (!canvas || !canvas.id) {
         setError("キャンバスの作成に失敗しました");
@@ -153,8 +160,27 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
     }
     setLoading(true);
     try {
+      const { data } = await supabase.auth.getUser();
+      const user = data.user;
+      if (!user || !user.id) {
+        setError("ユーザー情報が取得できませんでした");
+        setLoading(false);
+        return;
+      }
+
+      // 現在のタイトルと同じ場合は重複チェックをスキップ
+      let finalTitle = editTitle.trim();
+      if (editTitle.trim() !== editingCanvas.title) {
+        // タイトルが変更された場合のみ重複チェック（現在のキャンバスは除外）
+        finalTitle = await api.generateUniqueCanvasTitle(
+          user.id,
+          editTitle.trim(),
+          editingCanvas.id
+        );
+      }
+
       const updatedCanvas = await api.updateCanvas(editingCanvas.id, {
-        title: editTitle.trim(),
+        title: finalTitle,
       });
       if (updatedCanvas) {
         setCanvases((prev) =>
@@ -162,7 +188,7 @@ export function CanvasList({ canvases: initialCanvases }: CanvasListProps) {
             canvas.id === editingCanvas.id
               ? {
                   ...canvas,
-                  title: editTitle.trim(),
+                  title: finalTitle,
                   updated_at: new Date().toISOString(),
                 }
               : canvas
