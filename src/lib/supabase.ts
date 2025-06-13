@@ -46,11 +46,18 @@ export type User = {
 
 export const api = {
   // 全てのキャンバス取得
-  getCanvases: async (): Promise<Canvas[]> => {
-    const { data, error } = await supabase
+  getCanvases: async (user_id?: string): Promise<Canvas[]> => {
+    let query = supabase
       .from('canvas')
       .select('id, user_id, title, is_public, created_at')
       .order('created_at', { ascending: false });
+    
+    // user_idが指定された場合はフィルタリング
+    if (user_id) {
+      query = query.eq('user_id', user_id);
+    }
+    
+    const { data, error } = await query;
     if (error) throw error;
     return (data || []).map(item => ({
       ...item,
