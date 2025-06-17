@@ -27,6 +27,7 @@ interface GroupContainerProps {
   onMove: (id: string, x: number, y: number) => void;
   onResize: (id: string, width: number, height: number) => void;
   onDelete: (id: string) => Promise<void>;
+  onEdit?: (group: Group) => void;
   isPublic?: boolean;
 }
 
@@ -35,6 +36,7 @@ export function GroupContainer({
   onMove,
   onResize,
   onDelete,
+  onEdit,
   isPublic = false,
 }: GroupContainerProps) {
   const [position, setPosition] = useState({
@@ -174,9 +176,7 @@ export function GroupContainer({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => console.log("編集機能は今後実装予定")}
-                >
+                <DropdownMenuItem onClick={() => onEdit?.(group)}>
                   <Edit className="mr-2 h-4 w-4" />
                   編集
                 </DropdownMenuItem>

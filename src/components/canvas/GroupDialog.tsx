@@ -74,13 +74,14 @@ export function GroupDialog({
       let result: BookmarkGroup;
 
       if (isEditing && group) {
-        // 編集の場合
+        // 編集の場合 - 名前のみ更新
         result = await api.updateGroup(group.id, {
           name: name.trim(),
-          position_x: positionX,
-          position_y: positionY,
-          width,
-          height,
+          // 座標とサイズは既存の値を保持
+          position_x: group.position_x,
+          position_y: group.position_y,
+          width: group.width,
+          height: group.height,
         });
       } else {
         // 新規作成の場合
@@ -124,7 +125,7 @@ export function GroupDialog({
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "グループの情報を編集してください。"
+              ? "グループ名を編集してください。"
               : "新しいグループを作成します。必要な情報を入力してください。"}
           </DialogDescription>
         </DialogHeader>
@@ -141,55 +142,60 @@ export function GroupDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="positionX">X座標</Label>
-              <Input
-                id="positionX"
-                type="number"
-                value={positionX}
-                onChange={(e) => setPositionX(Number(e.target.value))}
-                disabled={loading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="positionY">Y座標</Label>
-              <Input
-                id="positionY"
-                type="number"
-                value={positionY}
-                onChange={(e) => setPositionY(Number(e.target.value))}
-                disabled={loading}
-              />
-            </div>
-          </div>
+          {/* 新規作成時のみ座標とサイズを表示 */}
+          {!isEditing && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="positionX">X座標</Label>
+                  <Input
+                    id="positionX"
+                    type="number"
+                    value={positionX}
+                    onChange={(e) => setPositionX(Number(e.target.value))}
+                    disabled={loading}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="positionY">Y座標</Label>
+                  <Input
+                    id="positionY"
+                    type="number"
+                    value={positionY}
+                    onChange={(e) => setPositionY(Number(e.target.value))}
+                    disabled={loading}
+                  />
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="width">幅</Label>
-              <Input
-                id="width"
-                type="number"
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-                min="100"
-                disabled={loading}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="height">高さ</Label>
-              <Input
-                id="height"
-                type="number"
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-                min="100"
-                disabled={loading}
-                required
-              />
-            </div>
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="width">幅</Label>
+                  <Input
+                    id="width"
+                    type="number"
+                    value={width}
+                    onChange={(e) => setWidth(Number(e.target.value))}
+                    min="100"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="height">高さ</Label>
+                  <Input
+                    id="height"
+                    type="number"
+                    value={height}
+                    onChange={(e) => setHeight(Number(e.target.value))}
+                    min="100"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           {error && (
             <div className="text-red-500 text-sm bg-red-50 p-3 rounded border">

@@ -52,6 +52,7 @@ export function Canvas({
   const [shareOpen, setShareOpen] = useState(false);
   const [bookmarkDialogOpen, setBookmarkDialogOpen] = useState(false);
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [noGroupWarning, setNoGroupWarning] = useState(false);
@@ -271,6 +272,16 @@ export function Canvas({
     setBookmarkDialogOpen(true);
   };
 
+  const handleGroupEdit = (group: Group) => {
+    setEditingGroup(group);
+    setGroupDialogOpen(true);
+  };
+
+  const handleGroupDialogClose = () => {
+    setGroupDialogOpen(false);
+    setEditingGroup(null);
+  };
+
   return (
     <div className="h-full">
       {!isPublic && (
@@ -427,6 +438,7 @@ export function Canvas({
             onMove={handleGroupMove}
             onResize={handleGroupResize}
             onDelete={handleGroupDelete}
+            onEdit={handleGroupEdit}
             isPublic={isPublic}
           />
         ))}
@@ -468,9 +480,24 @@ export function Canvas({
       {!isPublic && (
         <GroupDialog
           isOpen={groupDialogOpen}
-          onClose={() => setGroupDialogOpen(false)}
+          onClose={handleGroupDialogClose}
           onSuccess={handleGroupSuccess}
           canvasId={canvas.id}
+          group={
+            editingGroup
+              ? {
+                  id: editingGroup.id,
+                  canvas_id: editingGroup.canvas_id,
+                  name: editingGroup.title,
+                  position_x: editingGroup.position_x,
+                  position_y: editingGroup.position_y,
+                  width: editingGroup.width,
+                  height: editingGroup.height,
+                  created_at: editingGroup.created_at,
+                  updated_at: editingGroup.updated_at,
+                }
+              : null
+          }
         />
       )}
     </div>
