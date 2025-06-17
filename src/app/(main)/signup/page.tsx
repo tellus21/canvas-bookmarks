@@ -30,15 +30,16 @@ export default function SignUpPage() {
     }
   };
 
-  const handleGoogleSignUp = async () => {
-    setLoading(true);
-    setError("");
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-    });
-    setLoading(false);
-    if (error) setError(error.message);
-  };
+  // Googleログイン機能 - 一時的に無効化
+  // const handleGoogleSignUp = async () => {
+  //   setLoading(true);
+  //   setError("");
+  //   const { error } = await supabase.auth.signInWithOAuth({
+  //     provider: "google",
+  //   });
+  //   setLoading(false);
+  //   if (error) setError(error.message);
+  // };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
@@ -81,7 +82,8 @@ export default function SignUpPage() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "登録中..." : "新規登録"}
         </Button>
-        <Button
+        {/* Googleログインボタン - 一時的に非表示 */}
+        {/* <Button
           type="button"
           variant="outline"
           className="w-full"
@@ -89,7 +91,7 @@ export default function SignUpPage() {
           disabled={loading}
         >
           Googleで登録
-        </Button>
+        </Button> */}
         <div className="text-center text-sm mt-4">
           すでにアカウントをお持ちの方は{" "}
           <a href="/signin" className="text-primary underline">
